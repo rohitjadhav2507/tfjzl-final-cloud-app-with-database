@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
-# from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views import generic
 from django.shortcuts import get_object_or_404
@@ -59,7 +58,7 @@ def registration_request(request):
             login(request, user)
             return HttpResponseRedirect(reverse(viewname='onlinecourse:index'))
         else:
-            context={"error": "User already exists."}
+            context = {"error": "User already exists."}
             return render(request, 'onlinecourse/user_registration_bootstrap.html', context)
 
     return render(request, 'onlinecourse/user_registration_bootstrap.html', context)
@@ -88,11 +87,18 @@ def logout_request(request):
 # Helper method to extract answers
 def extract_answers(request):
     submitted_answers = []
-    for key in request.POST:
-        if key.startswith('choice'):
-            value = request.POST[key]
-            choice_id = int(value)
-            submitted_answers.append(choice_id)
+    for key, value in request.POST.items():
+        if key.startswith('choice_'):
+            try:
+                submitted_answers.append(int(value))
+            except ValueError:
+                pass
+        elif key == 'choice':
+            for v in request.POST.getlist('choice'):
+                try:
+                    submitted_answers.append(int(v))
+                except ValueError:
+                    pass
     return submitted_answers
 
 
@@ -102,7 +108,7 @@ def submit(request, course_id):
     user = request.user
     enrollment = Enrollment.objects.filter(user=user, course=course).first()
     if not enrollment:
-        enrollment = Enrollment.objects.create(user=user, course=course, mode='audit')
+        enrollment = Enrollment.objects.create(user=user, course=course, mode='honor')
 
     submission = Submission.objects.create(enrollment=enrollment)
     selected_choice_ids = extract_answers(request)
@@ -121,18 +127,22 @@ def show_exam_result(request, course_id, submission_id):
     selected_ids = [choice.id for choice in selected_choices]
 
     total_score = 0
-    grade = 0
+    score = 0
 
     for question in course.question_set.all():
         total_score += question.grade
         if question.is_get_score(selected_ids):
-            grade += question.grade
+            score += question.grade
+
+    # Calculate grade as percentage score out of 100
+    grade = int((score / total_score) * 100) if total_score > 0 else 0
 
     context = {
         'course': course,
-        'selected_ids': selected_ids,
-        'grade': grade,
         'submission': submission,
-        'total_score': total_score
+        'grade': grade,
+        'score': score,
+        'choices': selected_choices,
+        'selected_ids': selected_ids,
     }
     return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
