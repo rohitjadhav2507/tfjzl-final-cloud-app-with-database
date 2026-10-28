@@ -142,6 +142,7 @@ def show_exam_result(request, course_id, submission_id):
         'grade': grade,
         'score': total_score,
         'total_score': total_score,
+        'possible': possible_score,
         'possible_score': possible_score,
         'choices': selected_choices,
         'selected_ids': selected_ids,

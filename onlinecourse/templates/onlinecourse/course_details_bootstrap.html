@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ course.name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ course.name }} - Course Details</title>
     {% load static %}
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
@@ -11,73 +13,106 @@
 </head>
 
 <body>
-    <!-- Navigation bar -->
-    <nav class="navbar navbar-light bg-light">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+    <!-- Bootstrap Navigation bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand font-weight-bold" href="{% url 'onlinecourse:index' %}">OnlineCourse</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'onlinecourse:index' %}">Home</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="navbar-text mr-3 font-weight-bold text-light">{{ user.first_name }}({{ user.username }})</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-danger btn-sm my-1" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm mr-2" href="{% url 'onlinecourse:login' %}">Login</a>
+                        <a class="btn btn-outline-light btn-sm" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
-            <ul class="nav navbar-nav navbar-right">
-                {% if user.is_authenticated %}
-                <li>
-                    <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                    <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-                </li>
-                {% else %}
-                <li>
-                    <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Username" name="username">
-                            <input type="password" class="form-control" placeholder="Password" name="psw">
-                            <button class="btn btn-primary" type="submit">Login</button>
-                            <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
-                        </div>
-                    </form>
-                </li>
-                {% endif %}
-            </ul>
         </div>
     </nav>
 
-    <!-- Page content -->
-    <div class="container-fluid mt-3">
-        <h2>{{ course.name }}</h2>
-        <div class="card-columns-vertical">
+    <!-- Bootstrap Container Layout -->
+    <div class="container">
+        <!-- Bootstrap Course Header Card Layout -->
+        <div class="card shadow-sm mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h1 class="card-title h3 mb-0">{{ course.name }}</h1>
+            </div>
+            <div class="card-body">
+                <p class="card-text lead">{{ course.description }}</p>
+            </div>
+        </div>
+
+        <!-- Bootstrap Lessons Section with Cards Layout -->
+        <h3 class="mb-3 text-secondary font-weight-bold">Lessons</h3>
+        <div class="row">
             {% for lesson in course.lesson_set.all %}
-            <div class="card mt-1">
-                <div class="card-header"><h5>Lesson {{ lesson.order|add:1 }}: {{ lesson.title }}</h5></div>
-                <div class="card-body">{{ lesson.content }}</div>
+            <div class="col-12 mb-3">
+                <div class="card shadow-sm border-secondary">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 font-weight-bold">Lesson {{ forloop.counter }}: {{ lesson.title }}</h5>
+                        <span class="badge badge-info">Order: {{ lesson.order }}</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ lesson.content }}</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No lessons available for this course.</div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Course Exam Form -->
+        <!-- Bootstrap Exam Form -->
         {% if user.is_authenticated %}
-        <br/>
-        <button class="btn btn-primary btn-block" type="button" data-toggle="collapse" data-target="#exam">Start Exam</button>
-        <div id="exam" class="collapse mt-2">
-            <form id="questionform" action="{% url 'onlinecourse:submit' course.id %}" method="post">
-                {% csrf_token %}
-                {% for question in course.question_set.all %}
-                <div class="card mt-1">
-                    <div class="card-header">
-                        <h5>{{ question.question_text }}</h5>
-                    </div>
-                    <div class="form-group p-3">
-                        {% for choice in question.choice_set.all %}
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                <input type="checkbox" name="choice_{{ choice.id }}" class="form-check-input" id="choice_{{ choice.id }}" value="{{ choice.id }}">
-                                {{ choice.choice_text }}
-                            </label>
+        <div class="my-4">
+            <button class="btn btn-success btn-lg btn-block shadow-sm" type="button" data-toggle="collapse" data-target="#exam">Start Exam</button>
+        </div>
+        <div id="exam" class="collapse mb-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Course Examination</h4>
+                </div>
+                <div class="card-body">
+                    <form id="questionform" action="{% url 'onlinecourse:submit' course.id %}" method="post">
+                        {% csrf_token %}
+                        {% for question in course.question_set.all %}
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">{{ question.question_text }}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for choice in question.choice_set.all %}
+                                <div class="form-check my-2">
+                                    <label class="form-check-label">
+                                        <input type="checkbox" name="choice_{{ choice.id }}" class="form-check-input" id="choice_{{ choice.id }}" value="{{ choice.id }}">
+                                        {{ choice.choice_text }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                         {% endfor %}
-                    </div>
+                        <input class="btn btn-primary btn-block btn-lg mt-3" type="submit" value="Submit Exam">
+                    </form>
                 </div>
-                {% endfor %}
-                <input class="btn btn-success btn-block mt-3" type="submit" value="Submit">
-            </form>
+            </div>
         </div>
         {% endif %}
     </div>
